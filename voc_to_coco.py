@@ -123,34 +123,34 @@ def parseXmlFiles(xml_path, coco_annotation_path):
                 else:
                     raise Exception('duplicated image: {}'.format(file_name))
                     # subelem is <width>, <height>, <depth>, <name>, <bndbox>
-            for subelem in elem:
-                bndbox['xmin'] = None
-                bndbox['xmax'] = None
-                bndbox['ymin'] = None
-                bndbox['ymax'] = None
+            with open(os.path.join(coco_annotation_path, file_name.replace('.jpg', '.txt')), 'a+') as f:
+                for subelem in elem:
+                    bndbox['xmin'] = None
+                    bndbox['xmax'] = None
+                    bndbox['ymin'] = None
+                    bndbox['ymax'] = None
 
-                current_sub = subelem.tag
-                if current_parent == 'object' and subelem.tag == 'name':
-                    object_name = subelem.text
-                    if object_name not in category_set:
-                        current_category_id = addCatItem(object_name)
-                    else:
-                        current_category_id = category_set[object_name]
+                    current_sub = subelem.tag
+                    if current_parent == 'object' and subelem.tag == 'name':
+                        object_name = subelem.text
+                        if object_name not in category_set:
+                            current_category_id = addCatItem(object_name)
+                        else:
+                            current_category_id = category_set[object_name]
 
-                elif current_parent == 'size':
-                    if size[subelem.tag] is not None:
-                        raise Exception('xml structure broken at size tag.')
-                    if subelem.text and subelem.text != 'Unspecified':
-                        size[subelem.tag] = int(float(subelem.text))
+                    elif current_parent == 'size':
+                        if size[subelem.tag] is not None:
+                            raise Exception('xml structure broken at size tag.')
+                        if subelem.text and subelem.text != 'Unspecified':
+                            size[subelem.tag] = int(float(subelem.text))
 
-                # option is <xmin>, <ymin>, <xmax>, <ymax>, when subelem is <bndbox>
-                for option in subelem:
-                    if current_sub == 'bndbox':
-                        if bndbox[option.tag] is not None:
-                            raise Exception('xml structure corrupted at bndbox tag.')
-                        bndbox[option.tag] = int(float(option.text))
+                    # option is <xmin>, <ymin>, <xmax>, <ymax>, when subelem is <bndbox>
+                    for option in subelem:
+                        if current_sub == 'bndbox':
+                            if bndbox[option.tag] is not None:
+                                raise Exception('xml structure corrupted at bndbox tag.')
+                            bndbox[option.tag] = int(float(option.text))
 
-                with open(os.path.join(coco_annotation_path, file_name.replace('.jpg', '.txt')), 'w') as f:
                     # only after parse the <object> tag
                     if bndbox['xmin'] is not None:
                         if object_name is None:
