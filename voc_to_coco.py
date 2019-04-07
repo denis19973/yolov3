@@ -79,7 +79,7 @@ def addAnnoItem(object_name, image_id, category_id, bbox):
     coco['annotations'].append(annotation_item)
 
 
-def parseXmlFiles(xml_path):
+def parseXmlFiles(xml_path, coco_annotation_path):
     for f in os.listdir(xml_path):
         if not f.endswith('.xml'):
             continue
@@ -150,30 +150,40 @@ def parseXmlFiles(xml_path):
                             raise Exception('xml structure corrupted at bndbox tag.')
                         bndbox[option.tag] = int(float(option.text))
 
-                # only after parse the <object> tag
-                if bndbox['xmin'] is not None:
-                    if object_name is None:
-                        raise Exception('xml structure broken at bndbox tag')
-                    if current_image_id is None:
-                        raise Exception('xml structure broken at bndbox tag')
-                    if current_category_id is None:
-                        raise Exception('xml structure broken at bndbox tag')
-                    bbox = []
-                    # x
-                    bbox.append(bndbox['xmin'])
-                    # y
-                    bbox.append(bndbox['ymin'])
-                    # w
-                    bbox.append(bndbox['xmax'] - bndbox['xmin'])
-                    # h
-                    bbox.append(bndbox['ymax'] - bndbox['ymin'])
-                    print('add annotation with {},{},{},{}'.format(object_name, current_image_id, current_category_id,
-                                                                   bbox))
-                    addAnnoItem(object_name, current_image_id, current_category_id, bbox)
+                with open(os.path.join(coco_annotation_path, file_name.replace('.jpg', '.txt')), 'w') as f:
+                    # only after parse the <object> tag
+                    if bndbox['xmin'] is not None:
+                        if object_name is None:
+                            raise Exception('xml structure broken at bndbox tag')
+                        if current_image_id is None:
+                            raise Exception('xml structure broken at bndbox tag')
+                        if current_category_id is None:
+                            raise Exception('xml structure broken at bndbox tag')
+                        bbox = []
+                        # x
+                        xmin = bndbox['xmin']
+                        bbox.append(xmin)
+                        # y
+                        ymin = bndbox['ymin']
+                        bbox.append(ymin)
+                        # w
+                        width = bndbox['xmax'] - bndbox['xmin']
+                        bbox.append(width)
+                        # h
+                        height = bndbox['ymax'] - bndbox['ymin']
+                        bbox.append(height)
+                        x_center = int(width / 2)
+                        y_center = int(height / 2)
+                        f.write('{} {} {} {} {}\n'.format(current_category_id, x_center, y_center, width, height))
+
+                        print('add annotation with {},{},{},{}'.format(object_name, current_image_id, current_category_id,
+                                                                       bbox))
+
+                        addAnnoItem(object_name, current_image_id, current_category_id, bbox)
 
 
 if __name__ == '__main__':
     xml_path = 'datasets/VOC2007/Annotations'
     json_file = 'instances.json'
-    parseXmlFiles(xml_path)
+    parseXmlFiles(xml_path, os.path.join(xml_path, 'val2014'))
     json.dump(coco, open(json_file, 'w'))
