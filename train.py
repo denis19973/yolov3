@@ -104,6 +104,7 @@ def train(
     model_info(model)
     nB = len(dataloader)
     n_burnin = min(round(nB / 5 + 1), 1000)  # burn-in batches
+    s = 'no targets'
     for epoch in range(start_epoch, epochs):
         model.train()
         print(('\n%8s%12s' + '%10s' * 7) % ('Epoch', 'Batch', 'xy', 'wh', 'conf', 'cls', 'total', 'nTargets', 'time'))
@@ -124,6 +125,7 @@ def train(
 
             nt = len(targets)
             if nt == 0:  # if no targets continue
+                print('no targets')
                 continue
 
             # Plot images with bounding boxes
@@ -191,7 +193,7 @@ def train(
             best_loss = test_loss
 
         # Save training results
-        save = True and not opt.nosave
+        save = True
         if save:
             # Create checkpoint
             chkpt = {'epoch': epoch,
@@ -213,39 +215,3 @@ def train(
 
             # Delete checkpoint
             del chkpt
-
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--epochs', type=int, default=273, help='number of epochs')
-    parser.add_argument('--batch-size', type=int, default=16, help='size of each image batch')
-    parser.add_argument('--accumulate', type=int, default=1, help='accumulate gradient x batches before optimizing')
-    parser.add_argument('--cfg', type=str, default='cfg/yolov3-spp.cfg', help='cfg file path')
-    parser.add_argument('--data-cfg', type=str, default='data/coco.data', help='coco.data file path')
-    parser.add_argument('--multi-scale', action='store_true', help='random image sizes per batch 320 - 608')
-    parser.add_argument('--img-size', type=int, default=416, help='pixels')
-    parser.add_argument('--resume', action='store_true', help='resume training flag')
-    parser.add_argument('--transfer', action='store_true', help='transfer learning flag')
-    parser.add_argument('--num-workers', type=int, default=4, help='number of Pytorch DataLoader workers')
-    parser.add_argument('--dist-url', default='tcp://127.0.0.1:9999', type=str, help='distributed training init method')
-    parser.add_argument('--rank', default=0, type=int, help='distributed training node rank')
-    parser.add_argument('--world-size', default=1, type=int, help='number of nodes for distributed training')
-    parser.add_argument('--backend', default='nccl', type=str, help='distributed backend')
-    parser.add_argument('--nosave', action='store_true', help='do not save training results')
-    opt = parser.parse_args()
-    print(opt, end='\n\n')
-
-    init_seeds()
-
-    train(
-        opt.cfg,
-        opt.data_cfg,
-        img_size=opt.img_size,
-        resume=opt.resume or opt.transfer,
-        transfer=opt.transfer,
-        epochs=opt.epochs,
-        batch_size=opt.batch_size,
-        accumulate=opt.accumulate,
-        multi_scale=opt.multi_scale,
-        num_workers=opt.num_workers
-    )

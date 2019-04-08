@@ -11,7 +11,7 @@ coco['categories'] = []
 category_set = dict()
 image_set = set()
 
-category_item_id = 0
+category_item_id = None
 image_id = 20180000000
 annotation_id = 0
 
@@ -20,7 +20,10 @@ def addCatItem(name):
     global category_item_id
     category_item = dict()
     category_item['supercategory'] = 'none'
-    category_item_id += 1
+    if category_item_id is None:
+        category_item_id = 0
+    else:
+        category_item_id += 1
     category_item['id'] = category_item_id
     category_item['name'] = name
     coco['categories'].append(category_item)
@@ -174,7 +177,16 @@ def parseXmlFiles(xml_path, coco_annotation_path):
                         bbox.append(height)
                         x_center = int(width / 2)
                         y_center = int(height / 2)
-                        f.write('{} {} {} {} {}\n'.format(current_category_id, x_center, y_center, width, height))
+                        #  label = [class, x, y, w, h]  # pixels
+                        # img_h, img_w, _ = img.shape
+                        # label = [class, x/img_w, y/img_h, w/img_w, h/img_h]  # normalized
+                        f.write('{} {} {} {} {}\n'.format(
+                            current_category_id,
+                            x_center / size['width'],
+                            y_center / size['height'],
+                            width / size['width'],
+                            height / size['height'],
+                        ))
 
                         print('add annotation with {},{},{},{}'.format(object_name, current_image_id, current_category_id,
                                                                        bbox))
